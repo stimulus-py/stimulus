@@ -1,0 +1,7 @@
+pyyaml
+paho-mqtt == 1.5.0
+pytz
+python-dateutil
+dateparser
+mergedeep
+astral

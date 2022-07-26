@@ -1,0 +1,12 @@
+devices:
+  mqtt:
+    type: mqtt
+    host: localhost
+    port: 1883
+  clock:
+    type: clock
+    timezone: america/new_york
+    lat: 39.0
+    lon: -77.0
+    elevation: 5.1
+    
