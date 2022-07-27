@@ -34,13 +34,16 @@ def add_stimulus_user_module(settings):
     stimulus.user = user_mod
     sys.modules['stimulus.user'] = user_mod
     import stimulus.user.automations
-    import stimulus.user.plugins
+    
 
 
 
 def import_user_plugins(settings):
+    import stimulus.user.plugins
     files = []
-    for (_, _, filenames) in os.walk(os.path.join(settings['user_path'],'plugins')):
+    plugin_path = os.path.join(settings['user_path'],'plugins')
+    logger.info(f'Loading plugin path: {plugin_path}')
+    for (_, _, filenames) in os.walk(plugin_path):
         files.extend(filenames)
         break
     for file in files:
@@ -53,6 +56,9 @@ def import_user_plugins(settings):
 def create_devices(settings):
     user_devices = {}
     for name,device_settings in settings['devices'].items():
+        if not name.isidentifier():
+            logger.error(f'Device name {name} is invalid, skipping creation of device')
+            continue
         if 'type' not in device_settings:
             logger.error(f'No device type in {name}. Check your stimulus.yml file')
             exit()
@@ -70,24 +76,24 @@ def create_devices(settings):
 
 # TODO need to finish, just copied loading plugins here.
 def load_automations(settings):
-    abs_path = os.path.join(os.path.dirname(os.path.realpath(__file__)),'../user/automations')
-    logger.info(f'Loading automations from {abs_path}')
-    sys.path.insert(1,abs_path)
+    import stimulus.user.automations
     files = []
-    for (_, _, filenames) in os.walk(abs_path):
+    automation_path = os.path.join(settings['user_path'],'automations')
+    logger.info(f'Loading automation path: {automation_path}')
+    for (_, _, filenames) in os.walk(automation_path):
         files.extend(filenames)
         break
-    # stimulus.core.automation.set_automation_importer()
-    # stimulus.core.automation.set_as_automation()
+    
     for file in files:
         #skip if not a .py file or begins with _
         if(file[0]=='_' or file[-3:].lower()!='.py'):
-            continue    
+            continue
+        if not file[:-3].isidentifier():
+            logger.warn("Automation file: {file} has a name that can't be imported, skipping")
+            continue
         logger.info(f'Loading {file}')
-        mod = builtins.__import__(file[:-3])
+        mod = builtins.__import__(f'stimulus.user.automations.{file[:-3]}')
 
-def test_func(*args,**kargs):
-    print("This is a test func call")
 
 if __name__ == "__main__":
     logger.info("Loading settings")

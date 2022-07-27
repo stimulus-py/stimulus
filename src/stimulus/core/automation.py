@@ -1,24 +1,9 @@
-import builtins
-import functools
 import inspect
 import threading
-from types import SimpleNamespace
 from stimulus.core.logging import logger
 
 threadLocal = threading.local()
 automation_dict = dict()
-# _original_import = builtins.__import__
-
-# def set_automation_importer():
-#     builtins.__import__ = functools.partial(_automation_import,_original_import)
-
-# def set_as_device(device):
-#     global threadLocal
-#     threadLocal.automation = automation._is_device(device)
-        
-# def set_as_automation():
-#     global threadLocal
-#     threadLocal.automation = automation._is_automation()
 
 def get_current_automation():
     global threadLocal
@@ -41,25 +26,8 @@ def get_current_automation():
     automation_dict[name] = automation(name)
     return automation_dict[name]
     
-    
-
 def set_automation(automation):
-    threadLocal.automation = automation
-
-# def _automation_import(original_import,name, *args, **kwargs):
-#     global threadLocal
-#     logger.debug(f'automation_import: {name} started')
-#     prev_automation = threadLocal.automation
-#     threadLocal.automation = automation(prev_automation)
-#     threadLocal.automation.name = name
-#     module = original_import(name, *args, **kwargs)
-#     logger.debug(f'automation_import: {name} finished.')
-#     if(threadLocal.automation.has_actions()):
-#         logger.info(f'automation: {name} count: {len(threadLocal.automation.actions)}')
-#     threadLocal.automation.file = 'test'
-#     threadLocal.automation = prev_automation
-#     return module
-    
+    threadLocal.automation = automation    
 
 class automation:
     def __init__(self, name):
