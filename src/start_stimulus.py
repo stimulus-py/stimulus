@@ -17,13 +17,30 @@ def load_settings():
     mergedeep.merge(user_config,default_config)
     return user_config
 
+def add_stimulus_user_module(settings):
+    import stimulus.user
+    # import user's user directory as module
+    if not os.path.isabs(settings['user_path']):
+        settings['user_path'] = os.path.realpath(os.path.join(os.path.dirname(__file__),settings['user_path']))
+    logger.info(F"user_path set to {settings['user_path']}")
+    (user_parent_path,mod_name) = os.path.split(settings['user_path'])
+    if not mod_name:
+        logger.critical("user_path is invalid")
+        raise ValueError("user_path is invalid")
+    logger.info(f"User module path: {user_parent_path} and module name: {mod_name}")
+    sys.path.insert(0,user_parent_path)
+    user_mod = builtins.__import__(mod_name)
+    sys.path.remove(user_parent_path)
+    stimulus.user = user_mod
+    sys.modules['stimulus.user'] = user_mod
+    import stimulus.user.automations
+    import stimulus.user.plugins
+
+
+
 def import_user_plugins(settings):
-    #User Plugins
-    abs_path = os.path.join(os.path.dirname(os.path.realpath(__file__)),'../user/plugins')
-    logger.info(f'Loading user plugins from {abs_path}')
-    sys.path.insert(1,abs_path)
     files = []
-    for (_, _, filenames) in os.walk(abs_path):
+    for (_, _, filenames) in os.walk(os.path.join(settings['user_path'],'plugins')):
         files.extend(filenames)
         break
     for file in files:
@@ -31,7 +48,7 @@ def import_user_plugins(settings):
         if(file[0]=='_' or file[-3:].lower()!='.py'):
             continue
         logger.info(f'Loading {file}')
-        mod = importlib.import_module(file[:-3])
+        mod = importlib.import_module(f'stimulus.user.plugins.{file[:-3]}')
 
 def create_devices(settings):
     user_devices = {}
@@ -75,6 +92,9 @@ def test_func(*args,**kargs):
 if __name__ == "__main__":
     logger.info("Loading settings")
     settings = load_settings()
+    
+    logger.info("Adding stimulus.user module")
+    add_stimulus_user_module(settings)
 
     logger.info("Loading user plugins")
     import_user_plugins(settings)
