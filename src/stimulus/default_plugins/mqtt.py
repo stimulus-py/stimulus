@@ -11,12 +11,13 @@ class mqtt(device.device):
         self._lock = threading.Lock()
         #Setup user access
         self.state = device.sprop(False)
-        self.connect = device.user_function(self.user_connect)
-#        self.disconnect = device.user_action(self.user_disconnect)
-#        self.send = device.user_action(self.user_send)
-        self.on_topic = device.stimulator(self._topic_register, self._topic_cancel)
-#        self.on_disconnected = device.simple_stimulator()
-#        self.on_connected = device.simple_stimulator()
+        self.running = device.sprop(True)
+        self.connect = device.user_function(self.connect)
+        self.disconnect = device.user_function(self.disconnect)
+        self.publish = device.user_function(self.publish)
+        self.on_topic = device.stimulator(self.topic_register, self.topic_cancel)
+        self.on_disconnected = device.simple_stimulator()
+        self.on_connected = device.simple_stimulator()
 
         #Setup paho mqtt client
         self._client = paho.Client()
@@ -32,10 +33,23 @@ class mqtt(device.device):
     def start(self):
         logger.info("Starting MQTT client")
         
-    def user_connect(self, message):
-        logger.debug(f"Called user_connect {message}")
+    def connect(self):
+        if not self.running:
+            self._client.loop_start()
+            self.running.set(True)
+            
     
-    def _topic_register(self,action, topic):
+    def disconnect(self):
+        if self.running:
+            self._client.disconnect()
+            self.running.set(False)
+            
+    def publish(self, topic, payload=None, qos=0, retain=False):
+        if self.running:
+            self._client.publish(topic, payload, qos, retain)
+        
+    
+    def topic_register(self,action, topic):
         logger.debug(f'registering for topic {topic} with {action}')
         self._lock.acquire()
         if topic in self._handlers:
@@ -51,7 +65,7 @@ class mqtt(device.device):
             self._client.subscribe(topic)
             logger.debug(f'Subscribed to {topic}')
         
-    def _topic_cancel(self,action):
+    def topic_cancel(self,action):
         self._lock.acquire()
         for (topic,action_list) in self._handlers.items():
             if action in action_list:

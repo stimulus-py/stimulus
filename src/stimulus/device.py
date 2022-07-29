@@ -71,9 +71,9 @@ class simple_stimulator(stimulator):
         super().__init__(self._register, self._cancel)
         self.actions = []
 
-    def call(self, *args, **kwargs):
+    def call(self, payload):
         for action in self.actions:
-            action.call(*args, **kwargs)
+            action.call(payload)
 
     def _register(self, action):
         self.actions.append(action)
@@ -93,12 +93,16 @@ class sprop(has_user_interface):
     def update(self, value):
         """Updates the stored value and calls notifiers"""
         old_value = self._value
+        payload = SimpleNamespace()
+        payload.old_value = old_value
+        payload.new_value = value
         self._value = value
-        self._on_update.call()
+        self._on_update.call(payload)
         # for action in self._on_update_actions:
         #     action()
         if(old_value is not self._value):   # Should we compare via is not or !=?
-            self._on_update.call()
+            
+            self._on_change.call(payload)
             # for action in self._on_change_actions:
             #     action()
 
@@ -107,12 +111,6 @@ class sprop(has_user_interface):
         if(self._on_set):
             self._on_set(value)
         self.update(value)
-
-    # def register_on_update(self, action):
-    #     self._on_update_actions.append(action)
-
-    # def register_on_change(self, action):
-    #     self._on_change_actions.append(action)
 
     def get(self):
         return self._value

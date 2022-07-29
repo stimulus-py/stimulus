@@ -21,7 +21,7 @@ class action:
         self._error_last_call = False
         self._automation.add_action(self)
     
-    def call(self,payload, deleteWhenDone=False):
+    def call(self,payload=None, deleteWhenDone=False):
         if self._callback_function == None:
             return
         def callback_thread():
