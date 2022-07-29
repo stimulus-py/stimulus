@@ -11,7 +11,6 @@ from stimulus.device import logger
 class clock(device.device):
     def __init__(self,config):
         self.at = device.stimulator(self._register_at, self._cancel_at)
-        
         self._tz = pytz.timezone(config['timezone'])
         self._timer_dict = dict()
         self._astral_obs = astral.Observer(config['lat'],config['lon'],config['elevation'])
@@ -48,8 +47,9 @@ class clock(device.device):
         t.start()
         self._timer_dict[action] = t
     
-    def _cancel_at(action):
-        pass       
+    def _cancel_at(self, action):
+        self._timer_dict[action].cancel()
+        self._timer_dict.pop(action)
     
     def _get_timer_callback(self,next_func, action):
         

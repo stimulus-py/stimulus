@@ -37,6 +37,9 @@ class automation:
     def add_action(self,action):
         self.actions.add(action)
     
+    def remove_action(self,action):
+        self.actions.remove(action)
+    
     def has_actions(self):
         if self.actions:
             return True

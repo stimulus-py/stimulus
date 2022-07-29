@@ -12,7 +12,6 @@ def register(callback_function, to_cancel, device):
     
 class action:
     def __init__(self,callback_function, to_cancel):
-        global action_set
         self._to_cancel = to_cancel
         self._callback_function = callback_function
         self._count = 0
@@ -43,12 +42,11 @@ class action:
         _thread_pool_executor.submit(callback_thread)
         
     def cancel(self):
-        global action_set
         if self._callback_function == None:
             return
         self._callback_function = None
         self._to_cancel(self)
-        action_set.remove(self)
+        self._automation.remove_action(self)
     
     def get_user_action(self):
         if(self._user_action is None):
