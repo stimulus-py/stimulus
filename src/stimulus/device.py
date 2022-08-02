@@ -21,12 +21,15 @@ class device:
     def __init__(self):
         pass
 
+    class user_device:
+        pass
+
     def get_user_class(this):
         class_attrs = dict()
         for obj_attr_name, obj_attr in vars(this).items():
             if issubclass(type(obj_attr), stimulus.device.has_user_interface):
                 class_attrs.update(obj_attr.get_user_class_attrs(obj_attr_name, this))
-        return type("user_device", (object,), class_attrs)
+        return type("user_device", (device.user_device,), class_attrs)
 
     def start(self):
         pass

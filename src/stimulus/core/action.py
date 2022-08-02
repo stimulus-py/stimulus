@@ -1,5 +1,6 @@
 from datetime import datetime
 import traceback
+from typing import Any, Callable, Optional
 import stimulus.core.automation
 import concurrent.futures
 from stimulus.core.logging import logger
@@ -9,23 +10,20 @@ _thread_pool_executor = concurrent.futures.ThreadPoolExecutor(
 )
 
 
-def register(callback_function, to_cancel, device):
-    a = action(callback_function, to_cancel)
-    return a
-
-
 class action:
-    def __init__(self, callback_function, to_cancel):
-        self._to_cancel = to_cancel
-        self._callback_function = callback_function
-        self._count = 0
-        self._last_called = None
-        self._user_action = None
-        self._automation = stimulus.core.automation.get_current_automation()
-        self._error_last_call = False
+    def __init__(self, callback_function: Callable, to_cancel: Callable):
+        self._to_cancel: Callable = to_cancel
+        self._callback_function: Optional[Callable] = callback_function
+        self._count: int = 0
+        self._last_called: Optional[datetime] = None
+        self._user_action: Optional[user_action] = None
+        self._automation: stimulus.core.automation.automation = (
+            stimulus.core.automation.get_current_automation()
+        )
+        self._error_last_call: bool = False
         self._automation.add_action(self)
 
-    def call(self, payload=None, deleteWhenDone=False):
+    def call(self, payload: Any = None, deleteWhenDone: bool = False) -> None:
         if self._callback_function is None:
             return
 
@@ -46,7 +44,7 @@ class action:
 
         _thread_pool_executor.submit(callback_thread)
 
-    def cancel(self):
+    def cancel(self) -> None:
         if self._callback_function is None:
             return
         self._callback_function = None
@@ -59,33 +57,40 @@ class action:
         return self._user_action
 
     @property
-    def count(self):
+    def count(self) -> int:
         return self._count
 
     @property
-    def last_called(self):
+    def last_called(self) -> Optional[datetime]:
         return self._last_called
 
     @property
-    def error_last_call(self):
+    def error_last_call(self) -> bool:
         return self._error_last_call
 
 
 class user_action:
-    def __init__(self, action):
+    def __init__(self, action: action):
         self._action = action
 
-    def cancel(self):
+    def cancel(self) -> None:
         self._action.cancel()
 
     @property
-    def count(self):
+    def count(self) -> int:
         return self._action.count
 
     @property
-    def last_called(self):
+    def last_called(self) -> Optional[datetime]:
         return self._action.last_called
 
     @property
-    def error_last_run(self):
+    def error_last_run(self) -> bool:
         return self._action.error_last_call
+
+
+def register(
+    callback_function: Callable, to_cancel: Callable, device: stimulus.device.device
+) -> action:
+    a = action(callback_function, to_cancel)
+    return a

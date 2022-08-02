@@ -1,6 +1,7 @@
 import builtins
 import os
 import sys
+from typing import MutableMapping, Set
 from stimulus.core.logging import logger
 import importlib
 import mergedeep
@@ -10,8 +11,7 @@ import stimulus.core.automation
 import signal
 
 
-def load_settings():
-    global settings
+def load_settings() -> MutableMapping:
     user_config = yaml.safe_load(open("user/config/stimulus.yml"))
     default_config = yaml.safe_load(
         open(
@@ -25,7 +25,7 @@ def load_settings():
     return user_config
 
 
-def add_stimulus_user_module(settings):
+def add_stimulus_user_module(settings: MutableMapping) -> None:
     import stimulus.user
 
     # import user's user directory as module
@@ -46,14 +46,15 @@ def add_stimulus_user_module(settings):
     sys.modules["stimulus.user"] = user_mod
 
 
-def import_user_plugins(settings):
+def import_user_plugins(settings: MutableMapping) -> None:
     builtins.__import__("stimulus.user.plugins")
 
-    files = []
-    plugin_path = os.path.join(settings["user_path"], "plugins")
+    files: Set[str] = set()
+    plugin_path: str = os.path.join(settings["user_path"], "plugins")
     logger.info(f"Loading plugin path: {plugin_path}")
+    # This is not how we should get files to load, but works until we refactor loading plugins
     for (_, _, filenames) in os.walk(plugin_path):
-        files.extend(filenames)
+        files.update(filenames)
         break
     for file in files:
         # skip if not a .py file or begins with _
@@ -63,7 +64,7 @@ def import_user_plugins(settings):
         importlib.import_module(f"stimulus.user.plugins.{file[:-3]}")
 
 
-def create_devices(settings):
+def create_devices(settings: MutableMapping) -> None:
     for name, device_settings in settings["devices"].items():
         if not name.isidentifier():
             logger.error(f"Device name {name} is invalid, skipping creation of device")
@@ -71,7 +72,7 @@ def create_devices(settings):
         if "type" not in device_settings:
             logger.error(f"No device type in {name}. Check your stimulus.yml file")
             exit()
-        device_type = device_settings["type"]
+        device_type: str = device_settings["type"]
         if not stimulus.core.device.device_type_exist(device_type):
             try:
                 importlib.import_module(f"stimulus.default_plugins.{device_type}")
@@ -85,14 +86,14 @@ def create_devices(settings):
 
 
 # TODO need to finish, just copied loading plugins here.
-def load_automations(settings):
+def load_automations(settings: MutableMapping) -> None:
     builtins.__import__("stimulus.user.automations")
 
-    files = []
+    files: Set[str] = set()
     automation_path = os.path.join(settings["user_path"], "automations")
     logger.info(f"Loading automation path: {automation_path}")
     for (_, _, filenames) in os.walk(automation_path):
-        files.extend(filenames)
+        files.update(filenames)
         break
 
     for file in files:
