@@ -1,12 +1,32 @@
 import inspect
 import threading
-from stimulus.core.logging import logger
+from typing import Dict
+from stimulus.core.log import logger
+import stimulus.core.action
 
 threadLocal = threading.local()
-automation_dict = dict()
+automation_dict: Dict[str, "automation"] = dict()
 
 
-def get_current_automation():
+class automation:
+    def __init__(self, name):
+        self.name = name
+        self.actions = set()
+
+    def add_action(self, action: "stimulus.core.action.action") -> None:
+        self.actions.add(action)
+
+    def remove_action(self, action: "stimulus.core.action.action") -> None:
+        self.actions.remove(action)
+
+    def has_actions(self) -> bool:
+        if self.actions:
+            return True
+        else:
+            return False
+
+
+def get_current_automation() -> automation:
     global threadLocal
     if hasattr(threadLocal, "automation"):
         return threadLocal.automation
@@ -28,23 +48,5 @@ def get_current_automation():
     return automation_dict[name]
 
 
-def set_automation(automation):
+def set_automation(automation: automation) -> None:
     threadLocal.automation = automation
-
-
-class automation:
-    def __init__(self, name):
-        self.name = name
-        self.actions = set()
-
-    def add_action(self, action):
-        self.actions.add(action)
-
-    def remove_action(self, action):
-        self.actions.remove(action)
-
-    def has_actions(self):
-        if self.actions:
-            return True
-        else:
-            return False

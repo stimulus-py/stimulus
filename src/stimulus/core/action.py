@@ -3,7 +3,8 @@ import traceback
 from typing import Any, Callable, Optional
 import stimulus.core.automation
 import concurrent.futures
-from stimulus.core.logging import logger
+import stimulus.device
+from stimulus.core.log import logger
 
 _thread_pool_executor = concurrent.futures.ThreadPoolExecutor(
     max_workers=15, thread_name_prefix="automationPool"
@@ -90,7 +91,7 @@ class user_action:
 
 
 def register(
-    callback_function: Callable, to_cancel: Callable, device: stimulus.device.device
+    callback_function: Callable, to_cancel: Callable, device: "stimulus.device.device"
 ) -> action:
     a = action(callback_function, to_cancel)
     return a

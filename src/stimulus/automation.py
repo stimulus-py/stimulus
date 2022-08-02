@@ -1,7 +1,7 @@
 # Decorator to register function with stimulator
 import functools
 from types import SimpleNamespace
-import stimulus.core.logging
+import stimulus.core.log
 import stimulus.core.automation
 
 S = SimpleNamespace()
@@ -17,7 +17,7 @@ def run_when(stimulator, *args, **kwargs):
 
 def _logger(level, msg):
     name = stimulus.core.automation.get_current_automation().name
-    stimulus.core.logging.user_log(name, level, msg)
+    stimulus.core.log.user_log(name, level, msg)
 
 
 logger = SimpleNamespace()

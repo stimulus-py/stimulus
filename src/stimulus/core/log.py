@@ -9,19 +9,19 @@ _automation_logger = _logger.getChild("automation")
 _logger.setLevel(logging.INFO)
 
 
-def user_log(name, level, msg):
+def user_log(name, level, msg) -> None:
     logger = _automation_logger.getChild(name)
     logger_level = getattr(logger, level)
     logger_level(msg, extra={"type": "@"})
 
 
-def device_log(name, level, msg):
+def device_log(name, level, msg) -> None:
     logger = _device_logger.getChild(name)
     logger_level = getattr(logger, level)
     logger_level(msg, extra={"type": "#"})
 
 
-class _ContextFilter_ChildName:
+class _ContextFilter_ChildName(logging.Filter):
     def filter(self, record):
         split_name = record.name.split(".")
         record.name = split_name[-1]
@@ -37,5 +37,3 @@ _h.setFormatter(
 )
 _h.addFilter(_ContextFilter_ChildName())
 _logger.addHandler(_h)
-
-logger.info("logger set up")

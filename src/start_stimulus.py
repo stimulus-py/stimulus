@@ -2,7 +2,7 @@ import builtins
 import os
 import sys
 from typing import MutableMapping, Set
-from stimulus.core.logging import logger
+from stimulus.core.log import logger
 import importlib
 import mergedeep
 import yaml

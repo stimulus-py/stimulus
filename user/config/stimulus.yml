@@ -1,5 +1,5 @@
 devices:
-  mqtt:
+  eclipse_public_mqtt:
     type: mqtt
     host: localhost
     port: 1883

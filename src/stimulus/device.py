@@ -6,7 +6,7 @@ import functools
 
 def _logger(level, msg):
     # name = stimulus.core.automation.get_current_automation().name
-    stimulus.core.logging.device_log("device", level, msg)
+    stimulus.core.log.device_log("device", level, msg)
 
 
 logger = SimpleNamespace()
