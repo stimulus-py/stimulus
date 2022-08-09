@@ -101,10 +101,9 @@ class sprop(has_user_interface):
         # self._on_update_actions = list()
         # self._on_change_actions = list()
 
-    def update(self, value):
+    def update(self, value, payload=SimpleNamespace()):
         """Updates the stored value and calls notifiers"""
         old_value = self._value
-        payload = SimpleNamespace()
         payload.old_value = old_value
         payload.new_value = value
         self._value = value
@@ -142,6 +141,13 @@ class sprop(has_user_interface):
             f"on_{name}_change": self._on_change.get_user_stimulator(device),
         }
         return user_interface
+
+
+class sprop_ro(sprop):
+    def __init__(self, init=None, on_set=None):
+        super().__init__(init, on_set)
+
+    _setter = None  # overwrite sprop._setter so user_interface property can't be set.
 
 
 class user_function(has_user_interface):

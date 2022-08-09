@@ -1,7 +1,6 @@
 from typing import Dict, Type
 import stimulus.device
 import stimulus.automation
-from types import SimpleNamespace
 
 DeviceCls = Type[stimulus.device.device]
 
@@ -26,9 +25,8 @@ def add_device(name: str, device: stimulus.device.device) -> None:
 
 
 def start_devices() -> None:
-    user_devices: Dict[str, stimulus.device.device.user_device] = dict()
+    # add devices to stimulus.automations.S before starting any device
     for name, device in _device_dict.items():
-        user_devices[name] = device.get_user_class()()
-    stimulus.automation.S = SimpleNamespace(**user_devices)
+        setattr(stimulus.automation.S, name, device.get_user_class()())
     for device in _device_dict.values():
         device.start()
