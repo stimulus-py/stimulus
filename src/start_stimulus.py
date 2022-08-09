@@ -1,7 +1,7 @@
 import builtins
 import os
 import sys
-from typing import MutableMapping, Set
+from typing import List, MutableMapping, Set
 from stimulus.core.log import logger
 import importlib
 import mergedeep
@@ -46,25 +46,7 @@ def add_stimulus_user_module(settings: MutableMapping) -> None:
     sys.modules["stimulus.user"] = user_mod
 
 
-def import_user_plugins(settings: MutableMapping) -> None:
-    builtins.__import__("stimulus.user.plugins")
-
-    files: Set[str] = set()
-    plugin_path: str = os.path.join(settings["user_path"], "plugins")
-    logger.info(f"Loading plugin path: {plugin_path}")
-    # This is not how we should get files to load, but works until we refactor loading plugins
-    for (_, _, filenames) in os.walk(plugin_path):
-        files.update(filenames)
-        break
-    for file in files:
-        # skip if not a .py file or begins with _
-        if file[0] == "_" or file[-3:].lower() != ".py":
-            continue
-        logger.info(f"Loading {file}")
-        importlib.import_module(f"stimulus.user.plugins.{file[:-3]}")
-
-
-def create_devices(settings: MutableMapping) -> None:
+def create_devices(settings: MutableMapping) -> bool:
     for name, device_settings in settings["devices"].items():
         if not name.isidentifier():
             logger.error(f"Device name {name} is invalid, skipping creation of device")
@@ -73,16 +55,41 @@ def create_devices(settings: MutableMapping) -> None:
             logger.error(f"No device type in {name}. Check your stimulus.yml file")
             exit()
         device_type: str = device_settings["type"]
-        if not stimulus.core.device.device_type_exist(device_type):
+        from_modules: List[str]
+        if "from" not in device_settings:
+            # if from is not specified then first try stimulus.user.devices.{device_type} then stimulus.default_devices.{device_type}
+            from_modules = [
+                f"stimulus.user.devices.{device_type}",
+                f"stimulus.default_devices.{device_type}",
+            ]
+        else:
+            from_modules = [device_settings["from"]]
+        for module_string in from_modules:
+            # Try to import module
             try:
-                importlib.import_module(f"stimulus.default_plugins.{device_type}")
+                module = importlib.import_module(module_string)
+                break
             except ImportError:
-                logger.error(f"Device type {device_type} not defined for device {name}")
+                logger.debug(f"Did not find module {module_string}")
                 continue
-        device_cls = stimulus.core.device.get_device_class(device_type)
+        else:
+            logger.critical(
+                f"Could not find a module for {device_type}, tried {from_modules}.  Check your stimulus.yml file and from definition for device: {name}"
+            )
+            return False
+        try:
+            device_cls = getattr(module, device_type)
+        except AttributeError:
+            logger.critical(
+                f"Could not find device type: {device_type} in {module_string}.  If this is the wrong place to find {device_type} add a from definition in your stimulus.yml file."
+            )
+            return False
+        # TODO check if device_cls is of type device
         device = device_cls(device_settings)
         stimulus.core.device.add_device(name, device)
+
     stimulus.core.device.start_devices()
+    return True
 
 
 # TODO need to finish, just copied loading plugins here.
@@ -116,13 +123,10 @@ if __name__ == "__main__":
     logger.info("Adding stimulus.user module")
     add_stimulus_user_module(settings)
 
-    logger.info("Loading user plugins")
-    import_user_plugins(settings)
-    logger.info("Finished loading user plugins")
-
     logger.info("Creating devices")
-    create_devices(settings)
-    logger.info("Finished creating devices")
+    if not create_devices(settings):
+        logger.critical("Failed to create all devices")
+        sys.exit(-1)
 
     # Load Automations
     logger.info("Loading automations")
