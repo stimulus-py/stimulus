@@ -160,12 +160,3 @@ class user_function(has_user_interface):
             f"{name}": self._function,
         }
         return user_interface
-
-
-def device_type(name):
-    # Decorator for marking a class as a device
-    def decorator(device_class):
-        stimulus.core.device.register_device_type_class(name, device_class)
-        return device_class
-
-    return decorator

@@ -8,7 +8,6 @@ import stimulus.device as device
 from stimulus.device import logger
 
 
-@device.device_type("clock")
 class clock(device.device):
     def __init__(self, config):
         self.at = device.stimulator(self._register_at, self._cancel_at)

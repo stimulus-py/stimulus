@@ -4,7 +4,6 @@ import paho.mqtt.client as paho
 import threading
 
 
-@device.device_type("mqtt")
 class mqtt(device.device):
     def __init__(self, config):
         self._lock = threading.Lock()

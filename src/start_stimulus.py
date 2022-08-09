@@ -8,6 +8,7 @@ import mergedeep
 import yaml
 import stimulus.core.device
 import stimulus.core.automation
+import stimulus.device
 import signal
 
 
@@ -84,7 +85,11 @@ def create_devices(settings: MutableMapping) -> bool:
                 f"Could not find device type: {device_type} in {module_string}.  If this is the wrong place to find {device_type} add a from definition in your stimulus.yml file."
             )
             return False
-        # TODO check if device_cls is of type device
+        if not issubclass(device_cls, stimulus.device.device):
+            logger.critical(
+                f"Could not load device {name} because {module_string}.{device_type} is not a subtype of stimuls.device.device"
+            )
+            return False
         device = device_cls(device_settings)
         stimulus.core.device.add_device(name, device)
 
@@ -92,7 +97,6 @@ def create_devices(settings: MutableMapping) -> bool:
     return True
 
 
-# TODO need to finish, just copied loading plugins here.
 def load_automations(settings: MutableMapping) -> None:
     builtins.__import__("stimulus.user.automations")
 
