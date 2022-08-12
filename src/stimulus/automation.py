@@ -15,9 +15,10 @@ def run_when(stimulator, *args, **kwargs):
     return inner_decorator
 
 
-def _logger(level, msg):
+def _logger(level, msg, *args, stacklevel=1, **kwargs):
+    stacklevel += 1
     name = stimulus.core.automation.get_current_automation().name
-    stimulus.core.log.user_log(name, level, msg)
+    stimulus.core.log.user_log(name, level, msg, *args, stacklevel=stacklevel, **kwargs)
 
 
 logger = SimpleNamespace()

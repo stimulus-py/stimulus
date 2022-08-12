@@ -1,11 +1,16 @@
 from typing import Dict, Type
 import stimulus.device
 import stimulus.automation
+import threading
 
 DeviceCls = Type[stimulus.device.device]
 
+
 _registered_device_types: Dict[str, DeviceCls] = {}
 _device_dict: Dict[str, stimulus.device.device] = dict()
+
+
+threadLocal = threading.local()
 
 
 def register_device_type_class(name: str, device_class: DeviceCls) -> None:
@@ -28,5 +33,6 @@ def start_devices() -> None:
     # add devices to stimulus.automations.S before starting any device
     for name, device in _device_dict.items():
         setattr(stimulus.automation.S, name, device.get_user_class()())
-    for device in _device_dict.values():
+    for name, device in _device_dict.items():
+
         device.start()

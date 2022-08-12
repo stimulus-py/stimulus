@@ -27,7 +27,6 @@ class automation:
 
 
 def get_current_automation() -> automation:
-    global threadLocal
     if hasattr(threadLocal, "automation"):
         return threadLocal.automation
     # module must be getting loaded
@@ -35,6 +34,9 @@ def get_current_automation() -> automation:
     for frame_info in stack:
         if frame_info.function == "<module>":
             name = frame_info.frame.f_locals["__name__"]
+            if name.startswith("stimulus.user.automations."):
+                # remove default module path from name
+                name = name[len("stimulus.user.automations.") :]
             break
     else:
         logger.critical("Could not locate automation")

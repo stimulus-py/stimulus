@@ -68,7 +68,9 @@ def create_devices(settings: MutableMapping) -> bool:
         for module_string in from_modules:
             # Try to import module
             try:
+
                 module = importlib.import_module(module_string)
+
                 break
             except ImportError:
                 logger.debug(f"Did not find module {module_string}")
@@ -92,7 +94,6 @@ def create_devices(settings: MutableMapping) -> bool:
             return False
         device = device_cls(device_settings)
         stimulus.core.device.add_device(name, device)
-
     stimulus.core.device.start_devices()
     return True
 

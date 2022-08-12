@@ -4,9 +4,12 @@ from types import SimpleNamespace
 import functools
 
 
-def _logger(level, msg):
+def _logger(level, msg, *args, stacklevel=1, **kwargs):
+    stacklevel += 1
     # name = stimulus.core.automation.get_current_automation().name
-    stimulus.core.log.device_log("device", level, msg)
+    stimulus.core.log.device_log(
+        "device", level, msg, *args, stacklevel=stacklevel, **kwargs
+    )
 
 
 logger = SimpleNamespace()
