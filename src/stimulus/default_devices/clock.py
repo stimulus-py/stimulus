@@ -13,6 +13,11 @@ class clock(device.device):
         self.at = device.stimulator(self._register_at, self._cancel_at)
         self._tz = pytz.timezone(config["timezone"])
         self._timer_dict = dict()
+        if not all(k in config for k in ("lat", "lon")):
+            config["lat"] = 0
+            config["lon"] = 0
+        if "elevation" not in config:
+            config["elevation"] = 0
         self._astral_obs = astral.Observer(
             config["lat"], config["lon"], config["elevation"]
         )
