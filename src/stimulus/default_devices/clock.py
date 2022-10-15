@@ -3,6 +3,7 @@ from dateparser import parse
 import pytz
 import threading
 import astral.sun
+import re
 
 import stimulus.device as device
 from stimulus.device import logger
@@ -11,6 +12,8 @@ from stimulus.device import logger
 class clock(device.device):
     def __init__(self, config):
         self.at = device.stimulator(self._register_at, self._cancel_at)
+        self.datetime = device.user_function(self.get_datetime)
+
         self._tz = pytz.timezone(config["timezone"])
         self._timer_dict = dict()
         if not all(k in config for k in ("lat", "lon")):
@@ -24,6 +27,10 @@ class clock(device.device):
 
     def start(self):
         pass
+
+    def get_datetime(self):
+        """Get the datetime with timezone"""
+        return datetime.datetime.now(self._tz)
 
     def _register_at(self, action, *args, **kwargs):
 
@@ -47,6 +54,10 @@ class clock(device.device):
         # User provides their own nextTime() function
         elif "nextFunc" in kwargs:
             next_func = kwargs["nextFunc"]
+        elif "countdown" in kwargs:
+            if "recurring" not in kwargs:
+                kwargs["recurring"] = True
+            next_func = self._countdown_func(kwargs["countdown"],kwargs["recurring"])
         else:
             logger.warning(
                 "Failed to register timer callback becuase the type isn't recognized."
@@ -134,10 +145,39 @@ class clock(device.device):
         if next is None:
             dt = None
         elif type(next) is datetime.datetime:
+            if next.tzinfo is None or next.tzinfo.utcoffset(next) is None: #TZ Naive
+                next = self._tz.localize(next)
             # calculate dt between now and next
-            dt = (
-                self._tz.localize(next) - datetime.datetime.now(self._tz)
-            ).total_seconds()
+            dt = (next - datetime.datetime.now(self._tz)).total_seconds()
         elif type(next) is int:
             dt = next
         return dt
+
+    def _countdown_func(self,countdown,recurring):
+        next_time = datetime.datetime.now(self._tz)
+        delta_time = parse_time_delta(countdown)
+        def next_func():
+            nonlocal next_time
+            nonlocal delta_time
+            next_time = next_time + delta_time
+            return next_time
+        return next_func
+
+def parse_time_delta(s):
+    """Create timedelta object representing time delta
+       expressed in a string
+   
+    Takes a string in the format produced by calling str() on
+    a python timedelta object and returns a timedelta instance
+    that would produce that string.
+   
+    Acceptable formats are: "X days, HH:MM:SS" or "HH:MM:SS".
+    """
+    if s is None:
+        return None
+    d = re.match(
+            r'((?P<days>\d+) days, )?(?P<hours>\d+):'
+            r'(?P<minutes>\d+):(?P<seconds>\d+)',
+            str(s)).groupdict(0)
+    return datetime.timedelta(**dict(( (key, int(value))
+                              for key, value in d.items() )))
