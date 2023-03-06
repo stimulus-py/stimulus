@@ -65,7 +65,7 @@ class mqtt(device.device):
 
     def topic_cancel(self, action):
         self._lock.acquire()
-        for (topic, action_list) in self._handlers.items():
+        for topic, action_list in self._handlers.items():
             if action in action_list:
                 action_list.remove(action)
                 break

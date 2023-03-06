@@ -33,7 +33,6 @@ class clock(device.device):
         return datetime.datetime.now(self._tz)
 
     def _register_at(self, action, *args, **kwargs):
-
         # allow the user to use time (day) or times (days) in the options,
         # we'll just use kargs['times'] and kargs['days']
 
@@ -111,7 +110,7 @@ class clock(device.device):
         def next_func():
             nonlocal date_time_list
             next_date_time_list = list()
-            for (d, t_str) in date_time_list:
+            for d, t_str in date_time_list:
                 next_date_time_list.append(self._get_date_time(d, t_str))
 
             next_date_time = min(next_date_time_list)

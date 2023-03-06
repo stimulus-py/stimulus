@@ -114,7 +114,6 @@ class sprop(has_user_interface):
         # for action in self._on_update_actions:
         #     action()
         if old_value is not self._value:  # Should we compare via is not or !=?
-
             self._on_change.call(payload)
             # for action in self._on_change_actions:
             #     action()

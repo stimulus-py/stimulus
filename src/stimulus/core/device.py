@@ -34,5 +34,4 @@ def start_devices() -> None:
     for name, device in _device_dict.items():
         setattr(stimulus.automation.S, name, device.get_user_class()())
     for name, device in _device_dict.items():
-
         device.start()

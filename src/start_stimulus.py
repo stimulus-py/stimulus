@@ -68,7 +68,6 @@ def create_devices(settings: MutableMapping) -> bool:
         for module_string in from_modules:
             # Try to import module
             try:
-
                 module = importlib.import_module(module_string)
 
                 break
@@ -104,7 +103,7 @@ def load_automations(settings: MutableMapping) -> None:
     files: Set[str] = set()
     automation_path = os.path.join(settings["user_path"], "automations")
     logger.info(f"Loading automation path: {automation_path}")
-    for (_, _, filenames) in os.walk(automation_path):
+    for _, _, filenames in os.walk(automation_path):
         files.update(filenames)
         break
 
