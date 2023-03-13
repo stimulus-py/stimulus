@@ -2,10 +2,13 @@ import stimulus.device as device
 import paho.mqtt.client as paho
 import threading
 
+_default_settings = {"transport": "tcp", "tls": False}
+
 
 class mqtt(device.device):
-    def __init__(self, config):
+    def __init__(self, settings):
         super().__init__()
+        self.settings = dict(_default_settings, **settings)
         self._lock = threading.Lock()
         # Setup user access
         self.state = device.sprop(False)
@@ -18,11 +21,15 @@ class mqtt(device.device):
         self.on_connected = device.simple_stimulator()
 
         # Setup paho mqtt client
-        self._client = paho.Client()
+        self._client = paho.Client(transport=self.settings["transport"])
+        if self.settings["tls"]:
+            self._client.tls_set_context()
         self._client.on_connect = self._on_connect
         self._client.on_message = self._on_message
-        self.logger.info(f"Connecting to MQTT server {config['host']}:{config['port']}")
-        self._client.connect(config["host"], config["port"], 60)
+        self.logger.info(
+            f"Connecting to MQTT server {self.settings['host']}:{self.settings['port']}"
+        )
+        self._client.connect(self.settings["host"], self.settings["port"], 60)
         self._client.loop_start()
         self._handlers = {}
 
