@@ -152,8 +152,10 @@ class sprop(has_user_interface):
         # self._on_update_actions = list()
         # self._on_change_actions = list()
 
-    def update(self, value, payload=SimpleNamespace()):
+    def update(self, value, payload=None):
         """Updates the stored value and calls notifiers"""
+        if payload is None:
+            payload = SimpleNamespace()
         old_value = self._value
         payload.old_value = old_value
         payload.new_value = value
@@ -161,7 +163,7 @@ class sprop(has_user_interface):
         self._on_update.call(payload)
         # for action in self._on_update_actions:
         #     action()
-        if old_value is not self._value:  # Should we compare via is not or !=?
+        if old_value != self._value:  # Should we compare via is not or !=?
             self._on_change.call(payload)
             # for action in self._on_change_actions:
             #     action()
