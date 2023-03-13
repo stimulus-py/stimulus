@@ -3,7 +3,6 @@ import os
 import sys
 from typing import List, MutableMapping, Set
 from stimulus.core.log import logger
-import importlib
 import mergedeep
 import yaml
 import stimulus.core.device
@@ -65,34 +64,10 @@ def create_devices(settings: MutableMapping) -> bool:
             ]
         else:
             from_modules = [device_settings["from"]]
-        for module_string in from_modules:
-            # Try to import module
-            try:
-                module = importlib.import_module(module_string)
-
-                break
-            except ImportError:
-                logger.debug(f"Did not find module {module_string}")
-                continue
-        else:
-            logger.critical(
-                f"Could not find a module for {device_type}, tried {from_modules}.  Check your stimulus.yml file and from definition for device: {name}"
-            )
-            return False
-        try:
-            device_cls = getattr(module, device_type)
-        except AttributeError:
-            logger.critical(
-                f"Could not find device type: {device_type} in {module_string}.  If this is the wrong place to find {device_type} add a from definition in your stimulus.yml file."
-            )
-            return False
-        if not issubclass(device_cls, stimulus.device.device):
-            logger.critical(
-                f"Could not load device {name} because {module_string}.{device_type} is not a subtype of stimuls.device.device"
-            )
-            return False
-        device = device_cls(device_settings)
-        stimulus.core.device.add_device(name, device)
+        device_instance = stimulus.device.load_device(
+            name, from_modules, device_type, device_settings
+        )
+        stimulus.core.device.add_device(name, device_instance)
     stimulus.core.device.start_devices()
     return True
 

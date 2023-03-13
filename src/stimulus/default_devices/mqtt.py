@@ -1,11 +1,11 @@
 import stimulus.device as device
-from stimulus.device import logger
 import paho.mqtt.client as paho
 import threading
 
 
 class mqtt(device.device):
     def __init__(self, config):
+        super().__init__()
         self._lock = threading.Lock()
         # Setup user access
         self.state = device.sprop(False)
@@ -21,7 +21,7 @@ class mqtt(device.device):
         self._client = paho.Client()
         self._client.on_connect = self._on_connect
         self._client.on_message = self._on_message
-        logger.info(f"Connecting to MQTT server {config['host']}:{config['port']}")
+        self.logger.info(f"Connecting to MQTT server {config['host']}:{config['port']}")
         self._client.connect(config["host"], config["port"], 60)
         self._client.loop_start()
         self._handlers = {}
@@ -29,7 +29,7 @@ class mqtt(device.device):
     #        self.on_topic = stimulus.device.stimulator(self._register, self._cancel)
 
     def start(self):
-        logger.info("Starting MQTT client")
+        self.logger.info("Starting MQTT client")
 
     def connect(self):
         if not self.running:
@@ -46,7 +46,7 @@ class mqtt(device.device):
             self._client.publish(topic, payload, qos, retain)
 
     def topic_register(self, action, topic):
-        logger.debug(f"registering for topic {topic} with {action}")
+        self.logger.debug(f"registering for topic {topic} with {action}")
         self._lock.acquire()
         if topic in self._handlers:
             self._lock.release()
@@ -61,7 +61,7 @@ class mqtt(device.device):
 
             self._client.message_callback_add(topic, callback)
             self._client.subscribe(topic)
-            logger.debug(f"Subscribed to {topic}")
+            self.logger.debug(f"Subscribed to {topic}")
 
     def topic_cancel(self, action):
         self._lock.acquire()
@@ -72,18 +72,18 @@ class mqtt(device.device):
         if not action_list:  # if action list is empty, remove it
             self._client.unsubscribe(topic)
             del self._handlers[topic]
-            logger.debug(f"Unsubscribed from {topic} because no action needs it.")
+            self.logger.debug(f"Unsubscribed from {topic} because no action needs it.")
         self._lock.release()
 
     def _on_connect(self, client, userdate, flags, rc):
-        logger.debug("Connected to MQTT server with result code " + str(rc))
+        self.logger.debug("Connected to MQTT server with result code " + str(rc))
 
     def _on_message(self, client, userdata, message):
-        logger.error("Handling topic with default callback: " + message.topic)
+        self.logger.error("Handling topic with default callback: " + message.topic)
 
     def _on_message_topic(self, topic, message):
         if topic in self._handlers:
             for action in self._handlers[topic]:
                 action.call(message)
         else:
-            logger.error("Handling topic: " + topic + " " + message.topic)
+            self.logger.error("Handling topic: " + topic + " " + message.topic)

@@ -6,11 +6,11 @@ import astral.sun
 import re
 
 import stimulus.device as device
-from stimulus.device import logger
 
 
 class clock(device.device):
     def __init__(self, config):
+        super().__init__()
         self.at = device.stimulator(self._register_at, self._cancel_at)
         self.datetime = device.user_function(self.get_datetime)
 
@@ -56,9 +56,9 @@ class clock(device.device):
         elif "countdown" in kwargs:
             if "recurring" not in kwargs:
                 kwargs["recurring"] = True
-            next_func = self._countdown_func(kwargs["countdown"],kwargs["recurring"])
+            next_func = self._countdown_func(kwargs["countdown"], kwargs["recurring"])
         else:
-            logger.warning(
+            self.logger.warning(
                 "Failed to register timer callback becuase the type isn't recognized."
             )
             return False
@@ -78,13 +78,13 @@ class clock(device.device):
             next_date_time = next_func()
             if next_date_time is None:  # don't run next timer and delete this callback
                 action.trigger({}, deleteWhenDone=True)
-                logger.debug("Timer callback done")
+                self.logger.debug("Timer callback done")
             else:
                 dt = self._get_timer_dt(next_date_time)
                 t = threading.Timer(dt, self._get_timer_callback(next_func, action))
                 t.start()
                 self._timer_dict[id] = t
-                logger.debug(f"Timer started. time: {dt}")
+                self.logger.debug(f"Timer started. time: {dt}")
                 action.call({})
 
         return timer_callback
@@ -96,7 +96,7 @@ class clock(device.device):
         for day in days.split(","):
             date = parse(day)
             if date is None:
-                logger.error(
+                self.logger.error(
                     f"String for recurring event on day: {day} not recognized."
                 )
                 continue
@@ -144,7 +144,7 @@ class clock(device.device):
         if next is None:
             dt = None
         elif type(next) is datetime.datetime:
-            if next.tzinfo is None or next.tzinfo.utcoffset(next) is None: #TZ Naive
+            if next.tzinfo is None or next.tzinfo.utcoffset(next) is None:  # TZ Naive
                 next = self._tz.localize(next)
             # calculate dt between now and next
             dt = (next - datetime.datetime.now(self._tz)).total_seconds()
@@ -152,31 +152,33 @@ class clock(device.device):
             dt = next
         return dt
 
-    def _countdown_func(self,countdown,recurring):
+    def _countdown_func(self, countdown, recurring):
         next_time = datetime.datetime.now(self._tz)
         delta_time = parse_time_delta(countdown)
+
         def next_func():
             nonlocal next_time
             nonlocal delta_time
             next_time = next_time + delta_time
             return next_time
+
         return next_func
+
 
 def parse_time_delta(s):
     """Create timedelta object representing time delta
        expressed in a string
-   
+
     Takes a string in the format produced by calling str() on
     a python timedelta object and returns a timedelta instance
     that would produce that string.
-   
+
     Acceptable formats are: "X days, HH:MM:SS" or "HH:MM:SS".
     """
     if s is None:
         return None
     d = re.match(
-            r'((?P<days>\d+) days, )?(?P<hours>\d+):'
-            r'(?P<minutes>\d+):(?P<seconds>\d+)',
-            str(s)).groupdict(0)
-    return datetime.timedelta(**dict(( (key, int(value))
-                              for key, value in d.items() )))
+        r"((?P<days>\d+) days, )?(?P<hours>\d+):" r"(?P<minutes>\d+):(?P<seconds>\d+)",
+        str(s),
+    ).groupdict(0)
+    return datetime.timedelta(**dict(((key, int(value)) for key, value in d.items())))

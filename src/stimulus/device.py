@@ -1,6 +1,9 @@
 import stimulus.core.device
 import stimulus.core.action
+from stimulus.core.log import logger
 from types import SimpleNamespace
+from typing import List, Dict, Any
+import importlib
 import functools
 
 
@@ -12,30 +15,75 @@ def _logger(level, msg, *args, stacklevel=1, **kwargs):
     )
 
 
-logger = SimpleNamespace()
-logger.debug = functools.partial(_logger, "debug")
-logger.info = functools.partial(_logger, "info")
-logger.warning = functools.partial(_logger, "warning")
-logger.error = functools.partial(_logger, "error")
-logger.critical = functools.partial(_logger, "critical")
+# logger = SimpleNamespace()
+# logger.debug = functools.partial(_logger, "debug")
+# logger.info = functools.partial(_logger, "info")
+# logger.warning = functools.partial(_logger, "warning")
+# logger.error = functools.partial(_logger, "error")
+# logger.critical = functools.partial(_logger, "critical")
+device_name_being_loaded = None
 
 
 class device:
     def __init__(self):
-        pass
+        self.logger = stimulus.core.log.device_logger(device_name_being_loaded)
 
     class user_device:
         pass
 
-    def get_user_class(this):
+    def get_user_class(self):
         class_attrs = dict()
-        for obj_attr_name, obj_attr in vars(this).items():
+        for obj_attr_name, obj_attr in vars(self).items():
             if issubclass(type(obj_attr), stimulus.device.has_user_interface):
-                class_attrs.update(obj_attr.get_user_class_attrs(obj_attr_name, this))
+                class_attrs.update(obj_attr.get_user_class_attrs(obj_attr_name, self))
         return type("user_device", (device.user_device,), class_attrs)
 
     def start(self):
         pass
+
+
+def load_device(
+    name: str,
+    from_modules: List[str],
+    device_type: str,
+    device_settings: Dict[str, Any],
+) -> device:
+    global device_name_being_loaded
+    device_name_being_loaded = name
+    for module_string in from_modules:
+        # Try to import module
+        try:
+            module = importlib.import_module(module_string)
+            break
+        except ImportError:
+            logger.debug(f"Did not find module {module_string}")
+            continue
+    else:
+        logger.critical(
+            f"Could not find a module for {device_type}, tried {from_modules}.  Check your stimulus.yml file and from definition for device: {name}"
+        )
+        raise ImportError(
+            f"Could not find a module for {device_type}, tried {from_modules}."
+        )
+    try:
+        device_cls = getattr(module, device_type)
+    except AttributeError:
+        logger.critical(
+            f"Could not find device type: {device_type} in {module_string}.  If this is the wrong place to find {device_type} add a from definition in your stimulus.yml file."
+        )
+        raise ImportError(
+            f"Could not find device type: {device_type} in {module_string}."
+        )
+    if not issubclass(device_cls, stimulus.device.device):
+        logger.critical(
+            f"Could not load device {name} because {module_string}.{device_type} is not a subtype of stimuls.device.device"
+        )
+        raise ImportError(
+            f"Could not load device {name} because {module_string}.{device_type} is not a subtype of stimuls.device.device"
+        )
+    device_instance = device_cls(device_settings)
+    device_name_being_loaded = None
+    return device_instance
 
 
 class has_user_interface:

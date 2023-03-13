@@ -22,12 +22,8 @@ def user_log(name, level, msg, *args, stacklevel=1, extra={}, **kwargs) -> None:
     logger_level(msg, *args, extra=extra, stacklevel=stacklevel, **kwargs)
 
 
-def device_log(name, level, msg, *args, stacklevel=1, extra={}, **kwargs) -> None:
-    stacklevel += 1
-    extra.update({"type": "#", "s_name": name})
-    logger = _device_logger.getChild(name)
-    logger_level = getattr(logger, level)
-    logger_level(msg, *args, extra=extra, stacklevel=stacklevel, **kwargs)
+def device_logger(name):
+    return logging.LoggerAdapter(_device_logger, {"type": "#", "s_name": name})
 
 
 simple_formatter = logging.Formatter(
