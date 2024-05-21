@@ -4,5 +4,5 @@ pytz
 python-dateutil
 dateparser
 mergedeep
-astral
+astral < 3.0
 debugpy

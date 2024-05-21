@@ -77,7 +77,7 @@ class clock(device.device):
         def timer_callback():
             next_date_time = next_func()
             if next_date_time is None:  # don't run next timer and delete this callback
-                action.trigger({}, deleteWhenDone=True)
+                action.call({}, deleteWhenDone=True)
                 self.logger.debug("Timer callback done")
             else:
                 dt = self._get_timer_dt(next_date_time)
@@ -157,6 +157,10 @@ class clock(device.device):
         delta_time = parse_time_delta(countdown)
 
         def next_func():
+            if not recurring:
+                if hasattr(next_func, "_stop"):
+                    return None
+                next_func._stop = True
             nonlocal next_time
             nonlocal delta_time
             next_time = next_time + delta_time

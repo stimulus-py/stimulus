@@ -40,8 +40,7 @@ class action:
             self._count += 1
             self._last_called = datetime.now()
             if deleteWhenDone:
-                # logger.warning("TODO: delete when done")
-                pass
+                self.cancel()
 
         _thread_pool_executor.submit(callback_thread)
 
